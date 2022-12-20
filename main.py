@@ -37,9 +37,11 @@ while True:
 
         window[layout.keys.ALL_LINKS].update(all_links)
         window[layout.keys.POSTS_LINK].update(post_links)
+        layout.statusbar.update(f'{len(all_links)} available links; {len(post_links)} selected links')
 
     elif layout.keys.POSTS_LINK in event and values[layout.keys.POSTS_LINK]:
         all_links += [post_links.pop(values[layout.keys.POSTS_LINK][0])]
 
         window[layout.keys.ALL_LINKS].update(all_links)
         window[layout.keys.POSTS_LINK].update(post_links)
+        layout.statusbar.update(f'{len(all_links)} available links; {len(post_links)} selected links')

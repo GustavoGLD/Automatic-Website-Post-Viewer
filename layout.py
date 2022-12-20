@@ -1,7 +1,8 @@
 import PySimpleGUI as sg
-from types import SimpleNamespace
 
 LINKS = 3
+
+sg.theme('Topanga')
 
 class layout():
     class keys():
@@ -52,6 +53,9 @@ class layout():
         [postslink.table]
     ])
 
+    statusbar = sg.StatusBar('...', size=(50, 2), expand_x=True)
+
+
 sgConsole = sg.Multiline(size=(60, 5), key='console', background_color="black", text_color="grey", expand_x=True)
 
 window = sg.Window('Window Title', [
@@ -61,5 +65,6 @@ window = sg.Window('Window Title', [
                     [layout.nextbutton],
                     [layout.all_links],
                     [layout.postslink],
+                    [layout.statusbar],
                     [sgConsole]
                     ])
