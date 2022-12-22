@@ -29,7 +29,7 @@ class Job():
         self.__infos__ = web_element.text.split('\n')
         if 'FEATURED' in self.__infos__: self.__infos__.remove('FEATURED')
         if len(self.__infos__) != 7: raise Exception("the job info list is out of expected")
-        self.__infos__ += self.job_id
+        self.__infos__.append(self.job_id)
 
     def get_infos(self, infos:list[JobInfo]) -> list[str]:
         return [self.__infos__[info.value] for info in infos]

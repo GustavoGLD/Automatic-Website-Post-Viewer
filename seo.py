@@ -1,10 +1,12 @@
 import time
+import pickle
 import threading
 import PySimpleGUI as sg
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from picoworkers.picoworker import Picoworker
 from picoworkers.job import Job, JobInfo
+from selenium.common.exceptions import TimeoutException
 
 #options to optimization
 options = Options()
@@ -41,37 +43,62 @@ options.set_preference("extensions.update.enabled", False)
 options.set_preference("general.startup.browser", False)
 options.set_preference("plugin.default_plugin_disabled", False)
 options.set_preference("permissions.default.image", 2) # Image load disabled again
+
 driver = webdriver.Firefox(options=options)
 
 CATEGORY = "SEO, Promote Content, Search, Engage"
 SUBCATEGORY = "Visit + Engage 1x"
 
-progress = sg.ProgressBar(0, orientation='h', size=(20, 20), expand_x=True)
-table = sg.Table([[]], ['    Name    ', 'Payment'], num_rows=15, expand_x=True, expand_y=True)
-layout = [[table], [progress]]
+progress = sg.ProgressBar(
+    max_value=0,
+    orientation='h',
+    size=(20, 20),
+    expand_x=True
+)
+
+table = sg.Table(
+    values=[[]],
+    headings=[' ID ', 'LEVEL', ' TTR ', ' DONE '],
+    num_rows=15,
+    expand_x=True,
+    expand_y=True,
+    enable_events=True,
+    key='table'
+)
+
+jobInstruction = sg.Text("")
+
+layout = [
+    [
+        sg.Column([[table], [progress]], expand_y=True),
+        sg.Column([[jobInstruction]])
+    ]
+]
 
 picow = Picoworker(driver)
 picow.login()
 
 driver.get("https://sproutgigs.com/jobs.php?category=10&sub_category=1000")
 
-window = sg.Window('Window Title', layout, size=(512, 512))
+window = sg.Window('Window Title', layout, size=(700, 512))
 
 jobs: list[Job] = []
 
 def get_job_instructions(jobs: list[Job], table:sg.Table, window:sg.Window):
-    jobs_items = picow.get_jobs_items(scroll_down=True)[:10]
+    jobs_items = picow.get_jobs_items(scroll_down=True)
+    instructions: list[str] = []
 
     for i, job in enumerate(jobs_items, start=1):
-        job.set_instructions()
-        jobs.append(job)
-
-        table.update([job.get_infos([JobInfo.NAME, JobInfo.PAYMENT]) for job in jobs])
-
         try:
-            window.refresh()
-        except Exception:
-            pass
+            instructions.append(job.get_instructions())
+        except TimeoutException:
+            print("job not available")
+        else:
+            jobs.append(job)
+        progress.UpdateBar(i, len(jobs_items))
+    table.update([job.get_infos([JobInfo.ID, JobInfo.LEVEL, JobInfo.TTR, JobInfo.JOBS_DONE]) for job in jobs])
+    pickle.dump(instructions, open("save4.p", "wb"))
+    print(instructions)
 
 threading.Thread(target=get_job_instructions, args=(jobs, table, window,), daemon=True).start()
 
@@ -79,3 +106,7 @@ while True:
     event, values = window.read()
     if event == sg.WIN_CLOSED or event == 'Cancel':
         break
+    print(event, values)
+
+    if event == 'table':
+        jobInstruction.Update(jobs[values['table'][0]].get_instructions())
