@@ -1,12 +1,18 @@
 import time
 import pickle
 import threading
+import validators
 import PySimpleGUI as sg
 from selenium import webdriver
 from selenium.webdriver.firefox.options import Options
 from picoworkers.picoworker import Picoworker
 from picoworkers.job import Job, JobInfo
 from selenium.common.exceptions import TimeoutException
+from selenium.webdriver.firefox.webdriver import WebDriver
+
+from pop_up import pop_up
+from popup_info import pupup_info
+
 
 #options to optimization
 options = Options()
@@ -44,6 +50,8 @@ options.set_preference("general.startup.browser", False)
 options.set_preference("plugin.default_plugin_disabled", False)
 options.set_preference("permissions.default.image", 2) # Image load disabled again
 
+WINDOW_SIZE_X, WINDOW_SIZE_Y = 700, 512
+
 driver = webdriver.Firefox(options=options)
 
 CATEGORY = "SEO, Promote Content, Search, Engage"
@@ -52,27 +60,25 @@ SUBCATEGORY = "Visit + Engage 1x"
 progress = sg.ProgressBar(
     max_value=0,
     orientation='h',
-    size=(20, 20),
-    expand_x=True
+    expand_x=True,
+    size=(0, 20)
 )
 
 table = sg.Table(
     values=[[]],
     headings=[' ID ', 'LEVEL', ' TTR ', ' DONE '],
-    num_rows=15,
+    auto_size_columns=True,
     expand_x=True,
-    expand_y=True,
     enable_events=True,
     key='table'
 )
 
-jobInstruction = sg.Text("")
+jobInstruction = sg.Multiline("", expand_x=True, expand_y=True, write_only=True)
+
+buttons = [sg.Button("Open Links", expand_x=True), sg.Button("Start Job", expand_x=True)]
 
 layout = [
-    [
-        sg.Column([[table], [progress]], expand_y=True),
-        sg.Column([[jobInstruction]])
-    ]
+    [table], [progress], [jobInstruction], [buttons]
 ]
 
 picow = Picoworker(driver)
@@ -80,12 +86,13 @@ picow.login()
 
 driver.get("https://sproutgigs.com/jobs.php?category=10&sub_category=1000")
 
-window = sg.Window('Window Title', layout, size=(700, 512))
+window = sg.Window('Window Title', layout, size=(512, 512))
 
 jobs: list[Job] = []
 
 def get_job_instructions(jobs: list[Job], table:sg.Table, window:sg.Window):
-    jobs_items = picow.get_jobs_items(scroll_down=True)
+
+    jobs_items = picow.get_jobs_items(scroll_down=True)[:10]
     instructions: list[str] = []
 
     for i, job in enumerate(jobs_items, start=1):
@@ -96,11 +103,13 @@ def get_job_instructions(jobs: list[Job], table:sg.Table, window:sg.Window):
         else:
             jobs.append(job)
         progress.UpdateBar(i, len(jobs_items))
-    table.update([job.get_infos([JobInfo.ID, JobInfo.LEVEL, JobInfo.TTR, JobInfo.JOBS_DONE]) for job in jobs])
-    pickle.dump(instructions, open("save4.p", "wb"))
+    table.update([job.get_jobinfos([JobInfo.ID, JobInfo.LEVEL, JobInfo.TTR, JobInfo.JOBS_DONE]) for job in jobs])
+    #pickle.dump(instructions, open("save5.p", "wb"))
     print(instructions)
 
 threading.Thread(target=get_job_instructions, args=(jobs, table, window,), daemon=True).start()
+
+job_driver: WebDriver = None
 
 while True:
     event, values = window.read()
@@ -108,5 +117,11 @@ while True:
         break
     print(event, values)
 
-    if event == 'table':
-        jobInstruction.Update(jobs[values['table'][0]].get_instructions())
+    if event == 'table': jobInstruction.Update(jobs[values['table'][0]].get_instructions())
+    if event == 'Open Links':
+        links = list(filter(lambda x: validators.url(x), jobs[values['table'][0]].get_instructions().split()))
+        job_driver = webdriver.Firefox()
+        job_driver.get(links.pop(0))
+        for link in links: job_driver.execute_script(f'window.open("{link}", "_blank");')
+    if event == 'Start Job':
+        print([job.get_jobinfos(infos=[JobInfo.ID]) for job in jobs])

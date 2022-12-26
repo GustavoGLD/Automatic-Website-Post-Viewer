@@ -1,20 +1,22 @@
 import PySimpleGUI as sg
 
-# layout the window
-layout = [[sg.Text('A custom progress meter')],
-          [sg.ProgressBar(1000, orientation='v', size=(20, 20), key='progressbar')],
-          [sg.Cancel()]]
+sg.theme('DarkAmber')   # Add a touch of color
+# All the stuff inside your window.
+table = sg.Table([[1,2,3], [4,5,6]], ['Col 1','Col 2','Col 3'], num_rows=2)
+layout = [
+    [table],
+    [sg.Button("salve")]
+]
 
-# create the window`
-window = sg.Window('Custom Progress Meter', layout)
-progress_bar = window['progressbar']
-# loop that would normally do something useful
-for i in range(1000):
-    # check to see if the cancel button was clicked and exit loop if clicked
-    event, values = window.read(timeout=15)
-    if event == 'Cancel'  or event == sg.WIN_CLOSED:
+# Create the Window
+window = sg.Window('Window Title', layout)
+# Event Loop to process "events" and get the "values" of the inputs
+while True:
+    event, values = window.read()
+    if event == sg.WIN_CLOSED or event == 'Cancel': # if user closes window or clicks cancel
         break
-  # update bar with loop value +1 so that bar eventually reaches the maximum
-    progress_bar.UpdateBar(i + 1)
-# done with loop... need to destroy the window as it's still open
+    if event == "salve":
+        table.update()
+
+
 window.close()

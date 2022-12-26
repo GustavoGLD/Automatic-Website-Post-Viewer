@@ -1,14 +1,13 @@
 from static_vars import static_vars
-from layout import sgConsole, window
+from layout import sgConsole
 import PySimpleGUI as sg
 
-@static_vars(console=sgConsole, window=window)
-def console(output: str, error: bool = False):
+@static_vars(console=sgConsole)
+def console(window:sg.Window, output: str, error: bool = False):
     console.console: sg.Multiline
-    console.window: sg.Window
 
     if error:
         console.console.print(str(output), text_color="red")
     else:
         console.console.print(str(output))
-    console.window.refresh()
+    window.refresh()

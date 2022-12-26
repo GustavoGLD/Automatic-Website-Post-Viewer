@@ -17,6 +17,11 @@ class JobInfo(Enum):
     SUCCESS = auto()
     ID = auto()
 
+class WorkInfo(Enum):
+    SITE_PREFIX = 0
+
+
+
 class Job():
     def __init__(self, driver: WebDriver, web_element: WebElement) -> None:
         self.driver = driver
@@ -31,7 +36,7 @@ class Job():
         if len(self.__infos__) != 7: raise Exception("the job info list is out of expected")
         self.__infos__.append(self.job_id)
 
-    def get_infos(self, infos:list[JobInfo]) -> list[str]:
+    def get_jobinfos(self, infos:list[JobInfo]) -> list[str]:
         return [self.__infos__[info.value] for info in infos]
 
     #open job page
@@ -87,11 +92,9 @@ class Job():
         hide_job_button = self.driver.find_element(By.CSS_SELECTOR, ".hide-job")
         self.driver.execute_script("arguments[0].click();", hide_job_button)
 
-
     #open job page in a browser by os.system()
     def open_in_other_browser(self, path: str = "chrome.exe") -> None:
         subprocess.Popen([path, self.link])
-
 
     def open_in_other_tab(self, switch_=False) -> None:
         self.driver.execute_script(f'window.open("{self.link}", "_blank");')
