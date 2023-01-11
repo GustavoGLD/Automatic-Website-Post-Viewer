@@ -5,6 +5,7 @@ from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
 from selenium.common.exceptions import NoSuchElementException
 from selenium.webdriver.common.keys import Keys
+import PySimpleGUI as sg
 
 
 class Login():
@@ -40,9 +41,22 @@ class Login():
 
 
     def login(self):
-        self.driver.get("https://picoworkers.com/login.php")
 
-        print("~~~~~~ Picoworkers Login ~~~~~~")
-        login_email = "gustavogld.picoworker@gmail.com"
-        login_password = "757584175Gu_"
-        self.__make_login__(login_email, login_password)
+        layout = [
+            [sg.Text('SproutGigs Login:')],
+            [sg.Text('Email:    '), sg.Input(key='email')],
+            [sg.Text('Password: '), sg.Input(key='password')],
+            [sg.Button('Ok'), sg.Button('Cancel')]
+        ]
+        window = sg.Window('Login', layout)
+        event, values = window.read()
+
+        if event == 'Cancel': return
+
+        email = values['email']
+        password = values['password']
+
+        window.close()
+
+        self.driver.get("https://picoworkers.com/login.php")
+        self.__make_login__(email, password)
